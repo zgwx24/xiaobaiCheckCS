@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
-  "name": "小白看皮肤-饰品一键指令提取助手(UU&BUFF) v1.0 手套终端时代",
-  "version": "1.0",
+  "name": "小白看皮肤-饰品一键指令提取助手(UU&BUFF) v1.2 手套终端时代",
+  "version": "1.2",
   "description": "支持悠悠有品和网易BUFF的UB社区服一键指令提取及快捷功能",
   "icons": {
     "16": "icon16.png",

@@ -1,3 +1,4 @@
+
 (function() {
     'use strict';
     // 1. 自动重定向到价格排序 (仅限库存页)
@@ -29,7 +30,6 @@
                 const rawName = (buyBtn && buyBtn.getAttribute('data-goods-name')) || el.querySelector('h3, .name-cont h3')?.innerText.trim();
 
                 if (!assetStr || !rawName) return;
-                if (/印花|涂鸦|工具|通行证|钥匙|胶囊|补给箱|音乐盒/.test(rawName)) return;
 
                 const asset = JSON.parse(assetStr);
                 const info = asset.info || {};
@@ -93,14 +93,14 @@
 
 btn.onclick = (e) => {
                         e.preventDefault(); e.stopPropagation();
-                        
+
                         // 替换为 Chrome 原生剪贴板 API
                         navigator.clipboard.writeText(cmd).then(() => {
                             // 复制成功后执行：变绿 + 提示
                             btn.innerText = "✅ 已复制";
-                            btn.style.background = "#4caf50"; 
+                            btn.style.background = "#4caf50";
                             btn.style.color = "#fff";
-                            
+
                             // 1秒后恢复原状
                             setTimeout(() => {
                                 btn.innerText = "📋 指令";
@@ -127,11 +127,11 @@ btn.onclick = (e) => {
     // 静态映射数据区
     // ==========================================
  const weaponMap = {
+
+    "M4A1消音型": "m4a1_silencer",
     "沙漠之鹰": "deagle",
     "双持贝瑞塔": "elite",
     "FN57": "fiveseven",
-    "印花": "glock",
-    "涂鸦": "ak47",
     "AUG": "aug",
     "AWP": "awp",
     "法玛斯": "famas",

@@ -6,7 +6,7 @@
     // 静态映射数据区
     // ==========================================
     const weaponMap = {
-        "沙漠之鹰": "deagle", "双持贝瑞塔": "elite", "FN57": "fiveseven", "印花": "glock", "涂鸦": "ak47",
+        "沙漠之鹰": "deagle", "双持贝瑞塔": "elite", "FN57": "fiveseven", 
         "AUG": "aug", "AWP": "awp", "法玛斯": "famas", "G3SG1": "g3sg1", "加利尔AR": "galilar", "M249": "m249",
         "M4A4": "m4a1", "MAC-10": "mac10", "P90": "p90", "MP5-SD": "mp5sd", "UMP-45": "ump45", "XM1014": "xm1014",
         "PP-野牛": "bizon", "MAG-7": "mag7", "内格夫": "negev", "截短霰弹枪": "sawedoff", "Tec-9": "tec9",
@@ -16,7 +16,8 @@
         "刺刀": "bayonet", "海豹短刀": "knife_css", "折叠刀": "knife_flip", "穿肠刀": "knife_gut",
         "爪子刀": "knife_karambit", "M9刺刀": "knife_m9_bayonet", "猎杀者匕首": "knife_tactical",
         "弯刀": "knife_falchion", "鲍伊猎刀": "knife_survival_bowie", "蝴蝶刀": "knife_butterfly",
-        "暗影双匕": "knife_push", "系绳匕首": "knife_cord", "求生匕首": "knife_canis", "熊刀": "knife_ursus",
+        "孤舟刀": "knife_bo","暗影双匕": "knife_push", "系绳匕首": "knife_cord", "求生匕首": "knife_canis", 
+        "熊刀": "knife_ursus",
         "折刀": "knife_gypsy_jackknife", "流浪者匕首": "knife_outdoor", "短剑": "knife_stiletto",
         "锯齿爪刀": "knife_widowmaker", "骷髅匕首": "knife_skeleton", "廓尔喀刀": "knife_kukri",
         "格洛克18型": "glock", "AK-47": "ak47"
@@ -69,7 +70,9 @@
                 const value = valueEl ? valueEl.innerText : "";
 
                 if (title.includes('图案') || title.includes('seed')) {
-                    seed = value.trim() || "0";
+                    // 使用正则提取第一组连续数字
+                    const seedMatch = value.match(/\d+/);
+                    seed = seedMatch ? seedMatch[0] : "0";
                 } else if (title.includes('磨损') && !title.includes('排行')) {
                     let parsedFloat = parseFloat(value.trim());
                     if (!isNaN(parsedFloat)) float = parsedFloat.toFixed(18);
@@ -144,28 +147,36 @@
             const baseType = rawName.split('|')[0].replace(/\(|\)|（|）|★|StatTrak™|纪念品|\s+/g, '');
             const cleanFullName = rawName.replace(/\(|\)|（|）|★|StatTrak™|纪念品|\s+/g, '');
 
+            
+
             let cmd = "";
 
             if (gloveMap[baseType]) {
-                // 手套没有贴纸，保持原样
                 cmd = `sm_glove ${gloveMap[baseType]} ${paintId} ${float} ${seed}`;
             } else if (weaponMap[baseType]) {
-                // 武器带上 stickerPart
                 cmd = `sm_skin ${weaponMap[baseType]} ${paintId} ${float} ${seed}${stickerPart}; regenerate_weapon_skins`;
             } else {
+                // 探员使用全等匹配，防止误伤
                 for (const [k, id] of Object.entries(agentMap)) {
-                    if (cleanFullName.includes(k.replace(/\(|\)|（|）|★|StatTrak™|纪念品|\s+/g, ''))) {
+                    if (cleanFullName === k.replace(/\(|\)|（|）|★|StatTrak™|纪念品|\s+/g, '')) {
                         cmd = `sm_agent ${id}`;
                         break;
                     }
                 }
             }
 
+            // 🚨 6. 终极拦截点：如果是印花、钥匙箱子，cmd 为空
             if (!cmd) {
-                 cmd = `sm_skin knife_butterfly ${paintId} ${float} ${seed}${stickerPart}; regenerate_weapon_skins`;
+                // 如果发现之前从武器残留下的按钮，彻底清理掉，防止幽灵按钮
+                const oldBtn = popup.querySelector('.custom-cmd-btn-v4');
+                if (oldBtn) oldBtn.remove();
+                
+                // 直接中断，绝对不往下走生成新按钮的逻辑
+                return; 
             }
-
-            // 6. 创建新按钮并打上当前数据的标识
+            
+            // 7. 创建新按钮并打上当前数据的标识
+            
             const btn = document.createElement('div');
             btn.className = 'custom-cmd-btn-v4';
             btn.dataset.itemKey = currentItemKey; // 给按钮加上专属数据标签
