@@ -1,0 +1,38 @@
+{
+  "manifest_version": 3,
+  "name": "小白看皮肤-饰品一键指令提取助手(UU&BUFF) v1.1 手套终端时代",
+  "version": "1.1",
+  "description": "支持悠悠有品和网易BUFF的UB社区服一键指令提取及快捷功能",
+  "icons": {
+    "16": "icon16.png",
+    "48": "icon48.png",
+    "128": "icon128.png"
+  },
+  "action": {
+    "default_icon": {
+      "16": "icon16.png",
+      "48": "icon48.png",
+      "128": "icon128.png"
+    }
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "*://www.youpin898.com/*"
+      ],
+      "js": [
+        "uu_content.js"
+      ],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": [
+        "*://buff.163.com/*"
+      ],
+      "js": [
+        "buff_content.js"
+      ],
+      "run_at": "document_idle"
+    }
+  ]
+}
