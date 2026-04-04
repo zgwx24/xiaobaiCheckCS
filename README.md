@@ -8,8 +8,8 @@
 本浏览器扩展专为 CS2 社区服（如 UB 社区服）玩家打造，完美支持 **[网易 BUFF](http://https://buff.163.com/)** 与 **[悠悠有品](http://https://www.youpin898.com/)** 两大饰品交易平台。一键提取当前饰品的精准数据，生成游戏内检视指令。
 
  
-**2026-04-03-v1.2版本**
- **下载链接** : https://pan.baidu.com/s/1nrw7fp01gyBuwUbVhSD-0g?pwd=Q3Z6 
+**2026-04-04-v1.3版本**
+ **下载链接** : [https://pan.baidu.com/s/1nrw7fp01gyBuwUbVhSD-0g?pwd=Q3Z6 ](https://pan.baidu.com/s/1LE2N35QYsKCfTh42K7b2hg?pwd=7236)
  **下载密码** ：Q3Z6 
 
 
