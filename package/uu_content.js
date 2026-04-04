@@ -92,6 +92,30 @@
                 }
             });
 
+            // --- 方式 B：兼容点击展开后的详情弹窗 (Modal) 🚀 ---
+            // 提取磨损
+            const abradeEl = popup.querySelector('[class*="abrade-name"]');
+            if (abradeEl && abradeEl.innerText) {
+                let parsedFloat = parseFloat(abradeEl.innerText.trim());
+                if (!isNaN(parsedFloat)) float = parsedFloat.toFixed(18);
+            }
+            // 提取图案模板与编号
+            const bdItems = popup.querySelectorAll('[class*="template-bd-inner"]');
+            bdItems.forEach(item => {
+                const spans = item.querySelectorAll('span');
+                if (spans.length >= 2) {
+                    const title = spans[0].innerText;
+                    const value = spans[1].innerText;
+                    if (title.includes('图案') || title.includes('seed')) {
+                        const seedMatch = value.match(/\d+/);
+                        if (seedMatch) seed = seedMatch[0];
+                    } else if (title.includes('编号') || title.includes('皮肤编号')) {
+                        const idMatch = value.match(/\d+/);
+                        if (idMatch) paintId = idMatch[0];
+                    }
+                }
+            });
+
             // 3. 提取贴纸数据
             let stickerPart = "";
             let stickerKeyPart = "";
