@@ -228,13 +228,9 @@
     }
 
     // ==========================================
-    // 功能 2：自动价格降序排序 (支持 Vue 路由切换，仅限库存页)
+    // 功能 2：自动价格降序排序
     // ==========================================
     let hasAutoSorted = false;
-    let currentUrl = location.href; // 记录当前所在的 URL
-
-    // 初始化状态：如果一进来就在库存页，标记为未排序
-    hasAutoSorted = !currentUrl.includes('/my-stock');
 
     function autoSortByPriceDesc() {
         if (hasAutoSorted) return;
@@ -256,7 +252,6 @@
                 console.log('[脚本] 检测到未处于价格降序，正在自动切换...');
                 priceItem.click();
 
-                // 二次确认，防止点击未生效
                 setTimeout(() => {
                     const latestDownIcon = priceItem.querySelector('[class*="triangle-down"]');
                     if (latestDownIcon && !latestDownIcon.className.includes('active')) {
@@ -270,28 +265,15 @@
         }
     }
 
-    // 监听 DOM 变化的同时，顺便监听 URL 变化
-    const observer = new MutationObserver(() => {
-        // 1. 拦截 Vue 的路由“假跳转”
-        if (location.href !== currentUrl) {
-            currentUrl = location.href;
-            
-            // 判断是否进入了库存页
-            if (currentUrl.includes('/my-stock')) {
-                hasAutoSorted = false; // 换到库存页了，重置排序状态
-                console.log('[脚本] 进入我的库存，准备检测排序按钮');
-            } else {
-                hasAutoSorted = true; // 不在库存页，直接锁死，不浪费性能寻找按钮
-            }
-        }
-
-        // 2. 如果在库存页且未排序，则持续尝试寻找按钮并排序
-        if (!hasAutoSorted && currentUrl.includes('/my-stock')) {
+    // 监听排序按钮的加载
+    const observer = new MutationObserver((mutations, obs) => {
+        if (!hasAutoSorted) {
             autoSortByPriceDesc();
+        } else {
+            obs.disconnect();
         }
     });
 
-    // 保持观察者一直运行，不要 disconnect
     observer.observe(document.body, { childList: true, subtree: true });
 
     // 启动定时器监听鼠标悬浮的浮层 (降低延迟到200ms体验更好)
