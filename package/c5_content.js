@@ -151,10 +151,10 @@
                         break;
                     }
                 }
-                // ⚠️ 如果三大字典都找不到，记录错误信息！
-                if (!isAgent) {
-                    debugMsg = `⚠️ 缺少字典映射: [${baseType}]`;
-                }
+                // // ⚠️ 如果三大字典都找不到，记录错误信息！
+                // if (!isAgent) {
+                //     debugMsg = `⚠️ 缺少字典映射: [${baseType}]`;
+                // }
             }
 
             // 5. 注入 UI (不管有没有生成成功，都必须渲染点什么让我们看到)
@@ -162,16 +162,17 @@
             btn.className = 'custom-cmd-btn-c5';
             btn.dataset.itemKey = currentItemKey;
 
-            if (debugMsg) {
-                // 渲染红色报错按钮
-                btn.innerHTML = debugMsg;
-                btn.style.cssText = `
-                    background: #ff4d4d !important; color: white !important;
-                    padding: 8px !important; text-align: center !important;
-                    border-radius: 4px !important; margin: 10px 0 !important;
-                    font-size: 13px !important; z-index: 9999 !important; font-weight: bold !important;
-                `;
-            } else {
+            // if (debugMsg) {
+            //     // 渲染红色报错按钮
+            //     btn.innerHTML = debugMsg;
+            //     btn.style.cssText = `
+            //         background: #ff4d4d !important; color: white !important;
+            //         padding: 8px !important; text-align: center !important;
+            //         border-radius: 4px !important; margin: 10px 0 !important;
+            //         font-size: 13px !important; z-index: 9999 !important; font-weight: bold !important;
+            //     `;
+            // } else {
+            if (cmd) {
                 // 渲染正常的黄色复制按钮
                 const isWeaponOrGlove = gloveMap[baseType] || weaponMap[baseType];
                 const floatHint = isWeaponOrGlove ? ` (磨损:${parseFloat(float).toFixed(4)})` : "";
