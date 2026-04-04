@@ -95,6 +95,7 @@
             // 3. 提取贴纸数据
             let stickerPart = "";
             let stickerKeyPart = "";
+            let actualStickerCount = 0; // 🚀 新增：专门用来精确计数有效印花
             const stickerContainers = popup.querySelectorAll('[class*="sticker-info"]');
 
             for (let i = 0; i < 5; i++) {
@@ -111,6 +112,7 @@
 
                     if (stickerRawName && typeof stickerMap !== 'undefined' && stickerMap[stickerRawName] !== undefined) {
                         stickerId = stickerMap[stickerRawName];
+                        actualStickerCount++; // 🚀 关键修改：只有查到真实ID才算一个印花
                     }
 
                     if (abrasionEl && abrasionEl.innerText.includes('%')) {
@@ -174,8 +176,9 @@
             // 只在武器/手套上显示磨损提示，探员不显示
             const isWeaponOrGlove = gloveMap[baseType] || weaponMap[baseType];
             const floatHint = isWeaponOrGlove ? ` (磨损:${parseFloat(float).toFixed(4)})` : "";
-            const stickerCount = stickerPart.match(/\b([1-9]\d*)\b/g)?.length || 0;
-            const stickerHint = stickerCount > 0 ? ` (带${stickerCount}印花)` : "";
+            // const stickerCount = stickerPart.match(/\b([1-9]\d*)\b/g)?.length || 0;
+            // const stickerHint = stickerCount > 0 ? ` (带${stickerCount}印花)` : "";
+            const stickerHint = actualStickerCount > 0 ? ` (带${actualStickerCount}印花)` : ""; // 🚀 直接使用循环里的精准计数
 
             btn.innerHTML = `📋 复制指令${floatHint}${stickerHint}`;
             //btn.innerHTML = `📋 复制指令 (磨损:${parseFloat(float).toFixed(4)})${stickerHint}`;
