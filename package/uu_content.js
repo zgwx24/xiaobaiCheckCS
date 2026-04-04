@@ -49,20 +49,31 @@
     };
 
     // ==========================================
-    // 功能 1：动态注入复制指令按钮 (终极融合版：带贴纸+防复用+防更新)
+    // 功能 1：动态注入复制指令按钮 (完美防复用、防幽灵按钮版)
     // ==========================================
     function injectCommandButton() {
         const popups = document.querySelectorAll('[class*="test-container"], .ant-modal-content');
 
         popups.forEach(popup => {
-            const items = popup.querySelectorAll('[class*="template-infos-item"]');
-            if (items.length === 0) return;
+            // 1. 优先提取名字（极其重要：即使没有磨损数据，名字也是必须的）
+            let rawName = "";
+            const nameEl = popup.querySelector('[class*="name"], [class*="title"], [class*="goods-name"], [class*="goods-title"]');
+            if (nameEl && nameEl.innerText) {
+                rawName = nameEl.innerText.trim();
+            } else {
+                const breadcrumbs = document.querySelectorAll('.ant-breadcrumb-link');
+                rawName = breadcrumbs.length > 0 ? breadcrumbs[breadcrumbs.length - 1].innerText.trim() : document.title;
+            }
 
+            // 如果连名字都没加载出来，说明弹窗还没准备好，等下一个 200ms
+            if (!rawName) return; 
+
+            // 2. 提取基础数值（移除 if (items.length === 0) return; 允许无磨损物品继续执行）
             let seed = "0";
             let float = "0.000100000000000000";
             let paintId = "0";
-
-            // 1. 提取基础数值
+            
+            const items = popup.querySelectorAll('[class*="template-infos-item"]');
             items.forEach(item => {
                 const titleEl = item.querySelector('[class*="template-infos-item-title"]');
                 const valueEl = item.querySelector('[class*="template-infos-item-value"]');
@@ -70,22 +81,21 @@
                 const value = valueEl ? valueEl.innerText : "";
 
                 if (title.includes('图案') || title.includes('seed')) {
-                    // 使用正则提取第一组连续数字
                     const seedMatch = value.match(/\d+/);
                     seed = seedMatch ? seedMatch[0] : "0";
                 } else if (title.includes('磨损') && !title.includes('排行')) {
                     let parsedFloat = parseFloat(value.trim());
                     if (!isNaN(parsedFloat)) float = parsedFloat.toFixed(18);
                 } else if (title.includes('编号') || title.includes('皮肤编号')) {
-                    // 只提取前面的纯数字，过滤掉类似 "(P3)" 的额外字符
                     const idMatch = value.match(/\d+/);
                     paintId = idMatch ? idMatch[0] : "0";
                 }
             });
 
-            // 2. 提取贴纸数据 (完美兼容CS2的5印花位，使用模糊匹配防止类名哈希变更)
+            // 3. 提取贴纸数据
             let stickerPart = "";
             let stickerKeyPart = "";
+            let actualStickerCount = 0; // 🚀 新增：专门用来精确计数有效印花
             const stickerContainers = popup.querySelectorAll('[class*="sticker-info"]');
 
             for (let i = 0; i < 5; i++) {
@@ -97,57 +107,42 @@
                     const nameEl = container.querySelector('[class*="sticker-des"]');
                     const abrasionEl = container.querySelector('[class*="abrasion"]');
 
-                    let rawName = nameEl ? nameEl.innerText.trim() : "";
-                    // 自动清理前缀，例如 "印花 | 射手" 变成 "射手" 以匹配你的 Map
-                    rawName = rawName.replace(/^印花\s*\|\s*/, '').trim();
+                    let stickerRawName = nameEl ? nameEl.innerText.trim() : "";
+                    stickerRawName = stickerRawName.replace(/^印花\s*\|\s*/, '').trim();
 
-                    // 获取贴纸ID
-                    if (rawName && typeof stickerMap !== 'undefined' && stickerMap[rawName] !== undefined) {
-                        stickerId = stickerMap[rawName];
+                    if (stickerRawName && typeof stickerMap !== 'undefined' && stickerMap[stickerRawName] !== undefined) {
+                        stickerId = stickerMap[stickerRawName];
+                        actualStickerCount++; // 🚀 关键修改：只有查到真实ID才算一个印花
                     }
 
-         // 提取磨损百分比并反转 0 和 1 (例如 "100%" -> 0.00, "0%" -> 1.00)
                     if (abrasionEl && abrasionEl.innerText.includes('%')) {
                         const match = abrasionEl.innerText.match(/(\d+(\.\d+)?)/);
                         if (match) {
                             let wearValue = 1 - (parseFloat(match[1]) / 100);
-                            // 用 Math.max 防止浮点数计算偶尔出现 -0.00 的情况
                             abrasionVal = Math.max(0, wearValue).toFixed(2);
                         }
                     }
                 }
-
                 stickerPart += ` ${stickerId} ${abrasionVal}`;
                 stickerKeyPart += `-${stickerId}-${abrasionVal}`;
             }
 
-            // 3. 生成当前皮肤的唯一标识 (编号+磨损+模板+所有贴纸及磨损)
-            const currentItemKey = `${paintId}-${float}-${seed}${stickerKeyPart}`;
+            // 4. 生成当前皮肤的唯一标识（【关键修改】加上 rawName，确保探员切换、同磨损物品切换也能被识别）
+            const currentItemKey = `${rawName}-${paintId}-${float}-${seed}${stickerKeyPart}`;
 
-            // 4. 检查悬浮窗复用情况
+            // 5. 检查悬浮窗 DOM 复用情况，处理幽灵按钮
             const existingBtn = popup.querySelector('.custom-cmd-btn-v4');
             if (existingBtn) {
                 if (existingBtn.dataset.itemKey === currentItemKey) {
-                    return; // 依然是同一个皮肤，跳过
+                    return; // 物品没变，且按钮已存在，直接跳过，节省性能
                 } else {
-                    existingBtn.remove(); // 皮肤换了，移除老按钮准备重新生成
+                    existingBtn.remove(); // 物品换了，先把旧按钮删掉，防止幽灵残留！
                 }
             }
 
-            // 5. 继续提取名字并生成指令
-            let rawName = "";
-            const nameEl = popup.querySelector('[class*="name"], [class*="title"], [class*="goods-name"], [class*="goods-title"]');
-            if (nameEl && nameEl.innerText) {
-                rawName = nameEl.innerText.trim();
-            } else {
-                const breadcrumbs = document.querySelectorAll('.ant-breadcrumb-link');
-                rawName = breadcrumbs.length > 0 ? breadcrumbs[breadcrumbs.length - 1].innerText.trim() : document.title;
-            }
-
+            // 6. 分析物品类别，生成指令
             const baseType = rawName.split('|')[0].replace(/\(|\)|（|）|★|StatTrak™|纪念品|\s+/g, '');
             const cleanFullName = rawName.replace(/\(|\)|（|）|★|StatTrak™|纪念品|\s+/g, '');
-
-            
 
             let cmd = "";
 
@@ -156,36 +151,37 @@
             } else if (weaponMap[baseType]) {
                 cmd = `sm_skin ${weaponMap[baseType]} ${paintId} ${float} ${seed}${stickerPart}; regenerate_weapon_skins`;
             } else {
-                // 探员使用全等匹配，防止误伤
+                // 🚀 【关键修复】探员识别逻辑改为 "包含 (includes)"，无视后缀阵营名或多余字符
                 for (const [k, id] of Object.entries(agentMap)) {
-                    if (cleanFullName === k.replace(/\(|\)|（|）|★|StatTrak™|纪念品|\s+/g, '')) {
+                    const agentCleanKey = k.replace(/\(|\)|（|）|★|StatTrak™|纪念品|\s+/g, '');
+                    // 只要净化后的全名或基础名里包含了探员字典里的键值，就匹配成功
+                    if (cleanFullName.includes(agentCleanKey) || baseType.includes(agentCleanKey)) {
                         cmd = `sm_agent ${id}`;
                         break;
                     }
                 }
             }
 
-            // 🚨 6. 终极拦截点：如果是印花、钥匙箱子，cmd 为空
+            // 7. 终极拦截点：如果不属于武器、手套、探员（例如勋章、音乐盒），cmd 为空
             if (!cmd) {
-                // 如果发现之前从武器残留下的按钮，彻底清理掉，防止幽灵按钮
-                const oldBtn = popup.querySelector('.custom-cmd-btn-v4');
-                if (oldBtn) oldBtn.remove();
-                
-                // 直接中断，绝对不往下走生成新按钮的逻辑
+                // 直接返回即可，因为在第 5 步时，如果有其他物品残留的老按钮，已经被 existingBtn.remove() 删干净了
                 return; 
             }
             
-            // 7. 创建新按钮并打上当前数据的标识
-            
+            // 8. 创建新按钮并打上当前数据的标识
             const btn = document.createElement('div');
             btn.className = 'custom-cmd-btn-v4';
-            btn.dataset.itemKey = currentItemKey; // 给按钮加上专属数据标签
+            btn.dataset.itemKey = currentItemKey; 
 
-            // 计算贴纸数量并在按钮上提示
-            const stickerCount = stickerPart.match(/\b([1-9]\d*)\b/g)?.length || 0;
-            const stickerHint = stickerCount > 0 ? ` (带${stickerCount}印花)` : "";
+            // 只在武器/手套上显示磨损提示，探员不显示
+            const isWeaponOrGlove = gloveMap[baseType] || weaponMap[baseType];
+            const floatHint = isWeaponOrGlove ? ` (磨损:${parseFloat(float).toFixed(4)})` : "";
+            // const stickerCount = stickerPart.match(/\b([1-9]\d*)\b/g)?.length || 0;
+            // const stickerHint = stickerCount > 0 ? ` (带${stickerCount}印花)` : "";
+            const stickerHint = actualStickerCount > 0 ? ` (带${actualStickerCount}印花)` : ""; // 🚀 直接使用循环里的精准计数
 
-            btn.innerHTML = `📋 复制指令 (磨损:${parseFloat(float).toFixed(4)})${stickerHint}`;
+            btn.innerHTML = `📋 复制指令${floatHint}${stickerHint}`;
+            //btn.innerHTML = `📋 复制指令 (磨损:${parseFloat(float).toFixed(4)})${stickerHint}`;
             btn.style.cssText = `
                 background: #e3b238 !important; color: #1a1a1a !important;
                 padding: 10px !important; text-align: center !important;
@@ -199,8 +195,6 @@
 
             btn.onclick = (e) => {
                 e.preventDefault(); e.stopPropagation();
-                
-                // 使用 Chrome 原生 API 替换 GM_setClipboard
                 navigator.clipboard.writeText(cmd).then(() => {
                     const oldText = btn.innerHTML;
                     btn.innerHTML = "✅ 指令已复制";
@@ -214,12 +208,8 @@
                         btn.style.borderColor = "#e3b238";
                     }, 1500);
                 }).catch(err => {
-                    console.error('复制失败:', err);
                     btn.innerHTML = "❌ 复制失败";
-                    setTimeout(() => {
-                        // 失败后恢复按钮默认文字（你可以根据实际情况调整）
-                        btn.innerHTML = `📋 复制指令`;
-                    }, 1500);
+                    setTimeout(() => { btn.innerHTML = `📋 复制指令`; }, 1500);
                 });
             };
 
