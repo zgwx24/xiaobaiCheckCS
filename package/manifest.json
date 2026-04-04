@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "小白看皮肤-饰品一键指令提取助手(UU&BUFF) v1.3 手套终端时代",
-  "version": "1.3",
-  "description": "支持悠悠有品和网易BUFF的UB社区服一键指令提取及快捷功能",
+  "name": "小白看皮肤-饰品一键指令提取助手(UU/BUFF/C5) v1.4 手套终端时代",
+  "version": "1.4",
+  "description": "支持悠悠有品、网易BUFF和C5Game的UB社区服一键指令提取及快捷功能",
   "icons": {
     "16": "icon16.png",
     "48": "icon48.png",
@@ -31,6 +31,15 @@
       ],
       "js": [
         "buff_content.js"
+      ],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": [
+        "*://*.c5game.com/*"
+      ],
+      "js": [
+        "c5_content.js"
       ],
       "run_at": "document_idle"
     }
