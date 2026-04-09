@@ -7,10 +7,10 @@
 
 本浏览器扩展专为 CS2 社区服（如 UB 社区服）玩家打造，完美支持 **[网易 BUFF](https://buff.163.com/)**、**[悠悠有品](https://www.youpin898.com/)** 与 **[C5 Game](https://www.c5game.com/csgo)** 三家饰品交易平台。一键提取当前饰品的精准数据，生成游戏内检视指令。
 
-**2026-04-09-v1.5.0版本**
+**2026-04-09-v1.5.0版本 最新版本**
  **下载链接** :[https://pan.baidu.com/s/1pRUuIoEf7CkYa0qSP4Qusw?pwd=85eT](https://pan.baidu.com/s/1pRUuIoEf7CkYa0qSP4Qusw?pwd=85eT)
  
-**2026-04-05-v1.4.0版本**
+**2026-04-05-v1.4.0版本 chrome商店目前版本**
  **下载链接** : [https://pan.baidu.com/s/1zYW3mUlvhz0HbfNEisSMUg?pwd=p836](https://pan.baidu.com/s/1zYW3mUlvhz0HbfNEisSMUg?pwd=p836 ) 
 
 * * *
