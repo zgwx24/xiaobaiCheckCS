@@ -10,6 +10,10 @@ document.addEventListener('DOMContentLoaded', () => {
   let currentSettings = {};
   let currentPlatform = ''; 
 
+  function cloneDefaultSettings() {
+    return JSON.parse(JSON.stringify(defaultSettings));
+  }
+
   // DOM 元素 (加上防空判断)
   const mainView = document.getElementById('main-view');
   const settingsView = document.getElementById('settings-view');
@@ -103,6 +107,20 @@ document.addEventListener('DOMContentLoaded', () => {
       if (chrome.storage) {
         chrome.storage.local.set({ siteSettings: currentSettings }, () => {
           console.log(`${currentPlatform} 已恢复默认设置`);
+        });
+      }
+    });
+  }
+
+  // 6. 主界面一键恢复所有平台默认设置
+  const resetAllBtn = document.getElementById('reset-all-btn');
+  if (resetAllBtn) {
+    resetAllBtn.addEventListener('click', () => {
+      currentSettings = cloneDefaultSettings();
+
+      if (chrome.storage) {
+        chrome.storage.local.set({ siteSettings: currentSettings }, () => {
+          console.log('全部平台已恢复默认设置');
         });
       }
     });

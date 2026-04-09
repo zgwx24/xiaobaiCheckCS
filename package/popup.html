@@ -34,6 +34,9 @@
     /* 平台按钮保留你的品牌黄，但更加扁平和现代 */
     .btn-platform { flex: 1; background: #fbbc04; color: #202124; }
     .btn-platform:hover { background: #f2a900; }
+    .btn-server { width: 100%; background: #0f9d58; color: #ffffff; margin-bottom: 6px; }
+    .btn-server:hover { background: #0b8043; }
+    .server-hint { font-size: 11px; color: #5f6368; margin-bottom: 10px; line-height: 1.35; }
 
     /* Chrome 风格的图标按钮（圆形、无边框、灰底悬浮） */
     .icon-btn {
@@ -72,6 +75,9 @@
     .reset-container { text-align: center; margin-top: 20px; }
     .reset-link { font-size: 12px; color: #1a73e8; text-decoration: none; cursor: pointer; transition: color 0.2s; }
     .reset-link:hover { color: #174ea6; text-decoration: underline; }
+    .global-reset-container { text-align: center; margin-top: 12px; }
+    .global-reset-link { font-size: 12px; color: #80868b; text-decoration: underline; cursor: pointer; }
+    .global-reset-link:hover { color: #5f6368; }
   </style>
 </head>
 <body>
@@ -81,6 +87,9 @@
       <img src="icon48.png" alt="插件图标" class="title-icon">
       <h3>小白看皮肤</h3>
     </div>
+
+    <a href="https://csgo.moeub.cn/server" target="_blank" rel="noopener noreferrer" class="btn btn-server">UB社区 服务器列表</a>
+    <div class="server-hint">建议先进入 UB 社区服，再到下方市场复制 CMD 指令。</div>
     
     <div class="nav-row">
       <a href="https://buff.163.com/" target="_blank" class="btn btn-platform">前往 网易 BUFF</a>
@@ -102,8 +111,11 @@
     </div>
 
     <div class="info-box"><strong>当前适配的CS2版本：</strong><br>手套终端机</div>
-    <a href="https://cs2inspect.com/" target="_blank" rel="noopener noreferrer" class="btn btn-tool">自定义贴纸 (cs2inspect)</a>
-    <div class="warning-text">⚠️ <strong>提示：</strong>该功能通常无需登录即可使用 inspect 社区服。cs2inspect 为第三方海外网站，请自行甄别信息并注意账号与财产安全。</div>
+    <a href="https://cs2inspect.com/" target="_blank" rel="noopener noreferrer" class="btn btn-tool">手动调整贴纸位置/手动设置计数器 <br>(cs2inspect社区服)</a>
+    <div class="warning-text">⚠️ <strong>提示：</strong>该功能通常无需登录即可使用 inspect 社区服。<br>cs2inspect 为第三方海外网站，请自行甄别信息并注意账号与财产安全。</div>
+    <div class="global-reset-container">
+      <a id="reset-all-btn" class="global-reset-link">全部恢复默认</a>
+    </div>
   </div>
 
   <div id="settings-view">
