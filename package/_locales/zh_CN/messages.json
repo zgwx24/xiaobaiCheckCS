@@ -1,0 +1,10 @@
+{
+  "appName": {
+    "message": "小白看皮肤 - 饰品指令助手",
+    "description": "扩展在商店中展示的名称"
+  },
+  "appDesc": {
+    "message": "支持UU、BUFF、C5的饰品一键指令提取与快捷功能",
+    "description": "扩展在商店中展示的简介"
+  }
+}

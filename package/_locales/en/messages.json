@@ -1,0 +1,10 @@
+{
+  "appName": {
+    "message": "Xiaobai Skin - Item Command Helper",
+    "description": "Extension name shown in the store"
+  },
+  "appDesc": {
+    "message": "One-click item command extraction and quick actions for UU, BUFF, and C5",
+    "description": "Extension description shown in the store"
+  }
+}

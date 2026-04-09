@@ -1,8 +1,17 @@
 {
   "manifest_version": 3,
-  "name": "小白看皮肤-饰品一键指令提取助手(UU/BUFF/C5) v1.4.0 手套终端时代",
-  "version": "1.4.0",
-  "description": "支持悠悠有品、网易BUFF和C5Game的UB社区服一键指令提取及快捷功能",
+  "name": "__MSG_appName__",
+  "version": "1.4.1",
+  "default_locale": "zh_CN",
+  "description": "__MSG_appDesc__",
+  "permissions": [
+    "clipboardWrite"
+  ],
+  "host_permissions": [
+    "*://www.youpin898.com/*",
+    "*://buff.163.com/*",
+    "*://*.c5game.com/*"
+  ],
   "icons": {
     "16": "icon16.png",
     "48": "icon48.png",
