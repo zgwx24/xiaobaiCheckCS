@@ -1,6 +1,25 @@
 
 (function() {
     'use strict';
+// 获取当前 URL 判断是什么页面
+const currentUrl = window.location.href;
+const isInventory = currentUrl.includes('steam_inventory');
+const isBookmark = currentUrl.includes('bookmark');
+// 市场页：包含 market 或 goods，且【不能】包含 steam_inventory
+const isMarket = (currentUrl.includes('market') || currentUrl.includes('goods')) && !isInventory;
+
+// 从存储中读取设置
+chrome.storage.local.get(['siteSettings'], (result) => {
+    // 读取 BUFF 的设置，如果没有则默认全部开启
+    const settings = result.siteSettings?.buff || { market: true, inventory: true, bookmark: true };
+
+    // 判断当前页面是否被用户关闭了注入
+    if (isMarket && !settings.market) return; // 用户关了市场，直接退出
+    if (isInventory && !settings.inventory) return; // 用户关了库存，直接退出
+    if (isBookmark && !settings.bookmark) return; // 用户关了收藏，直接退出
+
+ 
+
     // 1. 自动重定向到价格排序 (仅限库存页)
     if (window.location.href.includes('steam_inventory') && !window.location.hash.includes('sort_by=price.desc')) {
         let h = window.location.hash || "#page_num=1&page_size=50";
@@ -121,7 +140,11 @@ btn.onclick = (e) => {
         });
     }
 
+    // setInterval(processItems, 1500);
+       // --- 下面放你原本的整个 processItems 和 setInterval 逻辑 ---
+    // 也就是说，只有在开关允许的情况下，脚本才会往下执行。
     setInterval(processItems, 1500);
+});
 
         // ==========================================
     // 静态映射数据区

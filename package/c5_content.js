@@ -1,5 +1,36 @@
 (function() {
     'use strict';
+    // ==========================================
+    // === 新增 1：读取和实时监听 C5 开关状态 ===
+    // ==========================================
+    let isMarketEnabled = true;
+    let isInventoryEnabled = true;
+
+    if (typeof chrome !== 'undefined' && chrome.storage) {
+        // 初始化读取 C5 的设置
+        chrome.storage.local.get(['siteSettings'], (result) => {
+            const settings = result.siteSettings?.c5 || { market: true, inventory: true };
+            isMarketEnabled = settings.market ?? true;
+            isInventoryEnabled = settings.inventory ?? true;
+        });
+
+        // 实时监听你在菜单里拨动开关的动作
+        chrome.storage.onChanged.addListener((changes, namespace) => {
+            if (namespace === 'local' && changes.siteSettings) {
+                const newSettings = changes.siteSettings.newValue?.c5;
+                if (newSettings) {
+                    isMarketEnabled = newSettings.market ?? true;
+                    isInventoryEnabled = newSettings.inventory ?? true;
+                }
+            }
+        });
+    }
+
+    // 提前把判断库存页的函数提上来，方便全局使用
+    function isInventoryPage() {
+        const url = location.href;
+        return url.includes('/user/inventory/steam') || url.includes('/my-stock');
+    }
 
     // ==========================================
     // 静态映射数据区
@@ -49,6 +80,11 @@
     const stickerMap = window.stickerMap || {};
 
     function injectC5Command() {
+        // === 新增 2：门卫拦截逻辑 ===
+        if (isInventoryPage() && !isInventoryEnabled) return; // 用户关了库存注入
+        if (!isInventoryPage() && !isMarketEnabled) return;   // 用户关了市场注入
+        // ==========================
+
         const popups = document.querySelectorAll('.pl15.pr15');
 
         popups.forEach(popup => {
@@ -68,7 +104,7 @@
                 else if (text.includes('磨损')) float = text.match(/[\d.]+/)?.[0] || "0.0001";
             });
 
-            // 2. 🚀 贴纸数据提取 (加装防崩溃装甲)
+            // 2. 贴纸数据提取 (加装防崩溃装甲)
             let stickerPart = "";
             let stickerKeyPart = "";
             let actualStickerCount = 0;
@@ -135,47 +171,30 @@
             const baseType = rawName.split('|')[0].replace(/\(|\)|（|）|★|StatTrak™|纪念品|\s+/g, '');
             const cleanFullName = rawName.replace(/\(|\)|（|）|★|StatTrak™|纪念品|\s+/g, '');
             let cmd = "";
-            let debugMsg = "";
 
             if (gloveMap[baseType]) {
                 cmd = `sm_glove ${gloveMap[baseType]} ${paintId} ${float} ${seed}`;
             } else if (weaponMap[baseType]) {
                 cmd = `sm_skin ${weaponMap[baseType]} ${paintId} ${float} ${seed}${stickerPart}; regenerate_weapon_skins`;
             } else {
-                let isAgent = false;
                 for (const [k, id] of Object.entries(agentMap)) {
                     const agentCleanKey = k.replace(/\(|\)|（|）|★|StatTrak™|纪念品|\s+/g, '');
                     if (cleanFullName.includes(agentCleanKey) || baseType.includes(agentCleanKey)) {
                         cmd = `sm_agent ${id}`;
-                        isAgent = true;
                         break;
                     }
                 }
-                // // ⚠️ 如果三大字典都找不到，记录错误信息！
-                // if (!isAgent) {
-                //     debugMsg = `⚠️ 缺少字典映射: [${baseType}]`;
-                // }
             }
 
-            // 5. 注入 UI (不管有没有生成成功，都必须渲染点什么让我们看到)
+            // 5. 注入 UI
             const btn = document.createElement('div');
             btn.className = 'custom-cmd-btn-c5';
             btn.dataset.itemKey = currentItemKey;
 
-            // if (debugMsg) {
-            //     // 渲染红色报错按钮
-            //     btn.innerHTML = debugMsg;
-            //     btn.style.cssText = `
-            //         background: #ff4d4d !important; color: white !important;
-            //         padding: 8px !important; text-align: center !important;
-            //         border-radius: 4px !important; margin: 10px 0 !important;
-            //         font-size: 13px !important; z-index: 9999 !important; font-weight: bold !important;
-            //     `;
-            // } else {
             if (cmd) {
                 // 渲染正常的黄色复制按钮
                 const isWeaponOrGlove = gloveMap[baseType] || weaponMap[baseType];
-                const floatHint = isWeaponOrGlove ? ` (磨损:${parseFloat(float).toFixed(4)})` : "";
+                const floatHint = isWeaponOrGlove ? ` (磨损:${parseFloat(float).toFixed(8)})` : "";
                 const stickerHint = actualStickerCount > 0 ? ` [${actualStickerCount}印花]` : "";
 
                 btn.innerHTML = `📋 复制指令${floatHint}${stickerHint}`;
@@ -212,23 +231,19 @@
             }
         });
     }
+
     // ==========================================
     // 功能 2：自动价格降序 (极速双击版)
     // ==========================================
 
     const CONFIG = {
-        initWait: 150,// 刚进页面时的反应时间
-        doubleTapWait: 50,// 🚀 连击间隔：50毫秒极速双击，瞬间跨越“升序”
-        verifyWait: 1000// 双击完成后，等待服务器回包的时间（用于最终校验）
+        initWait: 150,
+        doubleTapWait: 50,
+        verifyWait: 1000
     };
 
     let lastInventoryFingerprint = "";
     let sortProcessId = 0;
-
-    function isInventoryPage() {
-        const url = location.href;
-        return url.includes('/user/inventory/steam') || url.includes('/my-stock');
-    }
 
     function getInventoryFingerprint() {
         const nameNodes = document.querySelectorAll('.f16.ellipsis.text-primary, .sell-item-name, [class*="name"]');
@@ -268,22 +283,19 @@
             retryCount++;
 
             if (!isActive) {
-                // 🚀 核心逻辑：完全没被激活时，直接执行极速双击！
-                btn.click(); // 第 1 下：变升序
+                // 第 1 下：变升序
+                btn.click(); 
 
                 setTimeout(() => {
                     const freshBtn = getVisiblePriceBtn();
-                    // 确认它变成升序后，立刻补第 2 下
+                    // 第 2 下：变降序
                     if (freshBtn && freshBtn.classList.contains('active') && !freshBtn.classList.contains('desc')) {
-                        freshBtn.click(); // 第 2 下：变降序
+                        freshBtn.click(); 
                     }
-
-                    // 双击打完收工，等 1 秒后再来看看结果
                     setTimeout(attemptSort, CONFIG.verifyWait);
                 }, CONFIG.doubleTapWait);
 
             } else if (!isDesc) {
-                // 如果恰好卡在了升序，只需要补一枪
                 btn.click();
                 setTimeout(attemptSort, CONFIG.verifyWait);
             }
@@ -294,15 +306,18 @@
 
     const mainContainer = document.querySelector('#__nuxt') || document.body;
     const observer = new MutationObserver(() => {
-        if (isInventoryPage()) {
+        // === 新增 3：在 DOM 变动时，检查库存页开关是否开启 ===
+        if (isInventoryPage() && isInventoryEnabled) {
             triggerAutoSort();
         }
     });
 
     observer.observe(mainContainer, { childList: true, subtree: true });
 
-    if (isInventoryPage()) {
+    // === 新增 4：初始检查库存页开关 ===
+    if (isInventoryPage() && isInventoryEnabled) {
         triggerAutoSort();
     }
+    
     setInterval(injectC5Command, 300);
 })();

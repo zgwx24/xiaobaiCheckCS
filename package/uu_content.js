@@ -3,6 +3,34 @@
     'use strict';
 
     // ==========================================
+    // === 新增：读取和实时监听开关状态 ===
+    // ==========================================
+    let isMarketEnabled = true;
+    let isInventoryEnabled = true;
+
+    if (typeof chrome !== 'undefined' && chrome.storage) {
+        // 1. 初始化读取悠悠有品的设置
+        chrome.storage.local.get(['siteSettings'], (result) => {
+            const settings = result.siteSettings?.uu || { market: true, inventory: true };
+            isMarketEnabled = settings.market;
+            isInventoryEnabled = settings.inventory;
+        });
+
+        // 2. 实时监听你在菜单里拨动开关的动作
+        chrome.storage.onChanged.addListener((changes, namespace) => {
+            if (namespace === 'local' && changes.siteSettings) {
+                const newSettings = changes.siteSettings.newValue?.uu;
+                if (newSettings) {
+                    isMarketEnabled = newSettings.market;
+                    isInventoryEnabled = newSettings.inventory;
+                }
+            }
+        });
+    }
+
+    // 快捷判断当前是不是库存页的函数 (UUYP 专属)
+    const isInventoryPage = () => location.href.includes('/my-stock');
+    // ==========================================
     // 静态映射数据区
     // ==========================================
     const weaponMap = {
@@ -52,6 +80,10 @@
     // 功能 1：动态注入复制指令按钮 (完美防复用、防幽灵按钮版)
     // ==========================================
     function injectCommandButton() {
+        // === 新增：门卫拦截逻辑 ===
+        if (isInventoryPage() && !isInventoryEnabled) return; // 用户关了库存注入
+        if (!isInventoryPage() && !isMarketEnabled) return;   // 用户关了市场注入
+        // ==========================
         const popups = document.querySelectorAll('[class*="test-container"], .ant-modal-content');
 
         popups.forEach(popup => {
@@ -199,7 +231,7 @@
 
             // 只在武器/手套上显示磨损提示，探员不显示
             const isWeaponOrGlove = gloveMap[baseType] || weaponMap[baseType];
-            const floatHint = isWeaponOrGlove ? ` (磨损:${parseFloat(float).toFixed(4)})` : "";
+            const floatHint = isWeaponOrGlove ? ` (磨损:${parseFloat(float).toFixed(8)})` : "";
             // const stickerCount = stickerPart.match(/\b([1-9]\d*)\b/g)?.length || 0;
             // const stickerHint = stickerCount > 0 ? ` (带${stickerCount}印花)` : "";
             const stickerHint = actualStickerCount > 0 ? ` (带${actualStickerCount}印花)` : ""; // 🚀 直接使用循环里的精准计数
@@ -300,7 +332,8 @@
         }
 
         // 2. 如果在库存页且未排序，则持续尝试寻找按钮并排序
-        if (!hasAutoSorted && currentUrl.includes('/my-stock')) {
+        // === 【关键修改】：在这里加上 && isInventoryEnabled 限制 ===
+        if (!hasAutoSorted && currentUrl.includes('/my-stock') && isInventoryEnabled) {
             autoSortByPriceDesc();
         }
     });

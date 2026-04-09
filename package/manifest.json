@@ -1,11 +1,12 @@
 {
   "manifest_version": 3,
   "name": "__MSG_appName__",
-  "version": "1.4.1",
+  "version": "1.5.0",
   "default_locale": "zh_CN",
   "description": "__MSG_appDesc__",
   "permissions": [
-    "clipboardWrite"
+    "clipboardWrite",
+    "storage"
   ],
   "host_permissions": [
     "*://www.youpin898.com/*",
@@ -22,7 +23,8 @@
       "16": "icon16.png",
       "48": "icon48.png",
       "128": "icon128.png"
-    }
+    },
+    "default_popup": "popup.html"
   },
   "content_scripts": [
     {
