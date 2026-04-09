@@ -5,7 +5,8 @@
   "default_locale": "zh_CN",
   "description": "__MSG_appDesc__",
   "permissions": [
-    "clipboardWrite"
+    "clipboardWrite",
+    "storage"
   ],
   "host_permissions": [
     "*://www.youpin898.com/*",
