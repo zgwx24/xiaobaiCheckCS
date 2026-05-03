@@ -18,8 +18,8 @@
 ## 📦 更新日志
 **2026-04-10-v1.5.1版本**
 - 修复了uu的“完美世界2024” 贴纸的读取问题
-- 
-
+- 帮我写 git commit -m "feat: now will notice user only 4 stickers can be placed in cmd and the order may be not correct"
+- 1
 
 **2026-04-10-v1.5.0版本**
 - **重大更新**：新增弹窗菜单系统，功能入口与设置分区更清晰

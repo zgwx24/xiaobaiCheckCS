@@ -203,7 +203,9 @@
                         }
                     }
                 }
-                stickerPart += ` ${stickerId} ${abrasionVal}`;
+                if (i < 4) {
+                    stickerPart += ` ${stickerId} ${abrasionVal}`;
+                }
                 stickerKeyPart += `-${stickerId}-${abrasionVal}`;
             }
 
