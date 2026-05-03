@@ -89,7 +89,24 @@ chrome.storage.local.get(['siteSettings'], (result) => {
 
                 if (cmd) {
                     const btn = document.createElement('button');
-                    btn.innerText = "📋 指令";
+                    const stickerCount = (info.stickers && info.stickers.length > 0) ? info.stickers.length : 0;
+                    
+                    let btnDefaultText = "📋 指令";
+                    if (stickerCount > 4) {
+                        btnDefaultText = `📋 指令(带${stickerCount}印花，复制前4张)`;
+                    } else if (stickerCount > 0) {
+                        btnDefaultText = `📋 指令(带${stickerCount}印花)`;
+                    }
+                    
+                    btn.innerText = btnDefaultText;
+                    
+                    if (stickerCount > 0) {
+                        let noticeMsg = "请注意：由于网页机制，部分贴纸位置无法读取。";
+                        if (stickerCount > 4) {
+                            noticeMsg += "目前UB社区服只支持4张贴纸。";
+                        }
+                        btn.title = noticeMsg; // 原生鼠标悬浮提示
+                    }
 
                     if (isInventory) {
                         if (window.getComputedStyle(el).position === 'static') el.style.position = 'relative';
@@ -110,7 +127,9 @@ chrome.storage.local.get(['siteSettings'], (result) => {
                         if (target) { target.parentElement.appendChild(btn); } else { el.appendChild(btn); }
                     }
 
-btn.onclick = (e) => {
+                    const defaultBg = isInventory ? "rgba(227, 178, 56, 0.9)" : "#e3b238";
+
+                    btn.onclick = (e) => {
                         e.preventDefault(); e.stopPropagation();
 
                         // 替换为 Chrome 原生剪贴板 API
@@ -122,8 +141,8 @@ btn.onclick = (e) => {
 
                             // 1秒后恢复原状
                             setTimeout(() => {
-                                btn.innerText = "📋 指令";
-                                btn.style.background = "#e3b238";
+                                btn.innerText = btnDefaultText;
+                                btn.style.background = defaultBg;
                                 btn.style.color = "#1a1a1a";
                             }, 1000);
                         }).catch(err => {
@@ -131,7 +150,7 @@ btn.onclick = (e) => {
                             console.error("复制失败", err);
                             btn.innerText = "❌ 失败";
                             setTimeout(() => {
-                                btn.innerText = "📋 指令";
+                                btn.innerText = btnDefaultText;
                             }, 1000);
                         });
                     };
