@@ -30,6 +30,30 @@
 
     // 快捷判断当前是不是库存页的函数 (UUYP 专属)
     const isInventoryPage = () => location.href.includes('/my-stock');
+
+    // 注入自定义动画样式用于滚动提示
+    if (!document.getElementById('uu-custom-styles')) {
+        const style = document.createElement('style');
+        style.id = 'uu-custom-styles';
+        style.textContent = `
+            @keyframes uu-marquee {
+                0%, 15% { transform: translateX(0%); }
+                100% { transform: translateX(calc(-100% + 200px)); }
+            }
+            .uu-marquee-container {
+                overflow: hidden;
+                white-space: nowrap;
+                width: 100%;
+                display: flex;
+            }
+            .uu-marquee-content {
+                display: inline-block;
+                animation: uu-marquee 6s linear infinite alternate;
+            }
+        `;
+        document.head.appendChild(style);
+    }
+
     // ==========================================
     // 静态映射数据区
     // ==========================================
@@ -179,7 +203,9 @@
                         }
                     }
                 }
-                stickerPart += ` ${stickerId} ${abrasionVal}`;
+                if (i < 4) {
+                    stickerPart += ` ${stickerId} ${abrasionVal}`;
+                }
                 stickerKeyPart += `-${stickerId}-${abrasionVal}`;
             }
 
@@ -188,12 +214,17 @@
 
             // 5. 检查悬浮窗 DOM 复用情况，处理幽灵按钮
             const existingBtn = popup.querySelector('.custom-cmd-btn-v4');
+            const existingNoticeBtn = popup.querySelector('.custom-cmd-notice');
+
             if (existingBtn) {
                 if (existingBtn.dataset.itemKey === currentItemKey) {
                     return; // 物品没变，且按钮已存在，直接跳过，节省性能
                 } else {
                     existingBtn.remove(); // 物品换了，先把旧按钮删掉，防止幽灵残留！
+                    if (existingNoticeBtn) existingNoticeBtn.remove(); // 处理旧的提示框残留
                 }
+            } else if (existingNoticeBtn) {
+                existingNoticeBtn.remove(); // 避免没有主按钮但残留提示框的幽灵状态
             }
 
             // 6. 分析物品类别，生成指令
@@ -233,17 +264,15 @@
             const isWeaponOrGlove = gloveMap[baseType] || weaponMap[baseType];
             const floatHint = isWeaponOrGlove ? ` (磨损:${parseFloat(float).toFixed(8)})` : "";
             // const stickerCount = stickerPart.match(/\b([1-9]\d*)\b/g)?.length || 0;
-            // const stickerHint = stickerCount > 0 ? ` (带${stickerCount}印花)` : "";
-            const stickerHint = actualStickerCount > 0 ? ` (带${actualStickerCount}印花)` : ""; // 🚀 直接使用循环里的精准计数
+            const stickerHint = actualStickerCount > 0 ? ` (带${actualStickerCount}印花)` : "";
 
             btn.innerHTML = `📋 复制指令${floatHint}${stickerHint}`;
-            //btn.innerHTML = `📋 复制指令 (磨损:${parseFloat(float).toFixed(4)})${stickerHint}`;
             btn.style.cssText = `
                 background: #e3b238 !important; color: #1a1a1a !important;
                 padding: 10px !important; text-align: center !important;
                 border-radius: 6px !important; cursor: pointer !important;
                 font-size: 14px !important; font-weight: bold !important;
-                margin: 10px 0 !important; width: 100% !important;
+                margin: 10px 0 5px 0 !important; width: 100% !important;
                 box-sizing: border-box !important; border: 2px solid #e3b238 !important;
                 box-shadow: 0 4px 10px rgba(0,0,0,0.2) !important;
                 transition: all 0.2s;
@@ -269,6 +298,49 @@
                 });
             };
 
+            let noticeBtn = null;
+            if (actualStickerCount > 0) {
+                noticeBtn = document.createElement('div');
+                noticeBtn.className = 'custom-cmd-notice';
+                
+                let noticeMsg = "请注意：由于网页机制，部分贴纸位置无法读取。";
+                if (actualStickerCount > 4) {
+                    noticeMsg += "目前UB社区服只支持4张贴纸。";
+                }
+                
+                noticeBtn.innerHTML = `<div class="uu-marquee-container"><div class="uu-marquee-content">${noticeMsg}</div></div>`;
+                noticeBtn.style.cssText = `
+                    background: #fdf2f2 !important; color: #d32f2f !important;
+                    padding: 4px 10px !important; text-align: center !important;
+                    border-radius: 4px !important; cursor: pointer !important;
+                    font-size: 12px !important; font-weight: normal !important;
+                    margin: 0 0 10px 0 !important; width: 100% !important;
+                    box-sizing: border-box !important; border: 1px solid #f5c2c7 !important;
+                    box-shadow: 0 2px 5px rgba(0,0,0,0.1) !important;
+                    display: block !important; transition: all 0.2s; line-height: 18px !important;
+                `;
+                
+                noticeBtn.onclick = (e) => {
+                    e.preventDefault(); e.stopPropagation();
+                    navigator.clipboard.writeText(cmd).then(() => {
+                        noticeBtn.innerHTML = "✅ 指令已复制";
+                        noticeBtn.style.background = "#4caf50";
+                        noticeBtn.style.color = "#fff";
+                        noticeBtn.style.borderColor = "#4caf50";
+                        setTimeout(() => {
+                            noticeBtn.innerHTML = `<div class="uu-marquee-container"><div class="uu-marquee-content">${noticeMsg}</div></div>`;
+                            noticeBtn.style.background = "#fdf2f2";
+                            noticeBtn.style.color = "#d32f2f";
+                            noticeBtn.style.borderColor = "#f5c2c7";
+                        }, 1500);
+                    }).catch(err => {
+                        noticeBtn.innerHTML = "❌ 复制失败";
+                        setTimeout(() => { noticeBtn.innerHTML = `<marquee scrollamount="4">${noticeMsg}</marquee>`; }, 1500);
+                    });
+                };
+            }
+
+            if (noticeBtn) popup.prepend(noticeBtn);
             popup.prepend(btn);
         });
     }
@@ -7817,6 +7889,7 @@
     "Passion UA（全息）| 2024年上海锦标赛": 8010,
     "Passion UA（闪耀）| 2024年上海锦标赛": 8009,
     "完美世界 | 2024年上海锦标赛": 8024,
+    "Perfect World | 2024年上海锦标赛": 8024,
     "Imperial Esports（金色）| 2024年上海锦标赛": 8023,
     "Imperial Esports（全息）| 2024年上海锦标赛": 8022,
     "Imperial Esports（闪耀）| 2024年上海锦标赛": 8021,
@@ -7830,8 +7903,11 @@
     "Snax（闪耀）| 2024年上海锦标赛": 8054,
     "Snax | 2024年上海锦标赛": 8053,
     "完美世界（金色）| 2024年上海锦标赛": 8027,
+    "Perfect World（金色）| 2024年上海锦标赛": 8027,
     "完美世界（全息）| 2024年上海锦标赛": 8026,
+    "Perfect World（全息）| 2024年上海锦标赛": 8026,
     "完美世界（闪耀）| 2024年上海锦标赛": 8025,
+    "Perfect World（闪耀）| 2024年上海锦标赛": 8025,
     "m0NESY | 2024年上海锦标赛": 8065,
     "malbsMd（金色）| 2024年上海锦标赛": 8064,
     "malbsMd（全息）| 2024年上海锦标赛": 8063,

@@ -32,6 +32,29 @@
         return url.includes('/user/inventory/steam') || url.includes('/my-stock');
     }
 
+    // 注入自定义动画样式用于滚动提示
+    if (!document.getElementById('c5-custom-styles')) {
+        const style = document.createElement('style');
+        style.id = 'c5-custom-styles';
+        style.textContent = `
+            @keyframes c5-marquee {
+                0%, 15% { transform: translateX(0%); }
+                100% { transform: translateX(calc(-100% + 200px)); }
+            }
+            .c5-marquee-container {
+                overflow: hidden;
+                white-space: nowrap;
+                width: 100%;
+                display: flex;
+            }
+            .c5-marquee-content {
+                display: inline-block;
+                animation: c5-marquee 6s linear infinite alternate;
+            }
+        `;
+        document.head.appendChild(style);
+    }
+
     // ==========================================
     // 静态映射数据区
     // ==========================================
@@ -149,7 +172,9 @@
                     }
 
                     // 强制补齐 5 位参数
-                    stickerPart += ` ${stickerId} ${abrasionVal}`;
+                    if (i < 4) {
+                        stickerPart += ` ${stickerId} ${abrasionVal}`;
+                    }
                     stickerKeyPart += `-${stickerId}-${abrasionVal}`;
                 }
             } catch (e) {
@@ -161,10 +186,14 @@
             // 3. 防幽灵按钮
             const currentItemKey = `c5-${rawName}-${paintId}-${float}-${seed}${stickerKeyPart}`;
             const existingBtn = popup.querySelector('.custom-cmd-btn-c5');
+            const existingNoticeBtn = popup.querySelector('.custom-cmd-notice-c5');
 
             if (existingBtn) {
                 if (existingBtn.dataset.itemKey === currentItemKey) return;
                 existingBtn.remove();
+                if (existingNoticeBtn) existingNoticeBtn.remove();
+            } else if (existingNoticeBtn) {
+                existingNoticeBtn.remove();
             }
 
             // 4. 生成指令
@@ -191,18 +220,19 @@
             btn.className = 'custom-cmd-btn-c5';
             btn.dataset.itemKey = currentItemKey;
 
+            let noticeBtn = null;
             if (cmd) {
                 // 渲染正常的黄色复制按钮
                 const isWeaponOrGlove = gloveMap[baseType] || weaponMap[baseType];
                 const floatHint = isWeaponOrGlove ? ` (磨损:${parseFloat(float).toFixed(8)})` : "";
-                const stickerHint = actualStickerCount > 0 ? ` [${actualStickerCount}印花]` : "";
+                const stickerHint = actualStickerCount > 0 ? ` [带${actualStickerCount}印花]` : "";
 
                 btn.innerHTML = `📋 复制指令${floatHint}${stickerHint}`;
                 btn.style.cssText = `
                     background: #e3b238 !important; color: #1a1a1a !important;
                     padding: 8px !important; text-align: center !important;
                     border-radius: 4px !important; cursor: pointer !important;
-                    font-weight: bold !important; margin: 10px 0 !important;
+                    font-weight: bold !important; margin: 10px 0 5px 0 !important;
                     font-size: 13px !important; z-index: 9999 !important;
                 `;
 
@@ -220,13 +250,56 @@
                         }, 1500);
                     });
                 };
+                
+                if (actualStickerCount > 0) {
+                    noticeBtn = document.createElement('div');
+                    noticeBtn.className = 'custom-cmd-notice-c5';
+                    
+                    let noticeMsg = "请注意：由于网页机制，部分贴纸位置无法读取。";
+                    if (actualStickerCount > 4) {
+                        noticeMsg += "目前UB社区服只支持4张贴纸。";
+                    }
+                    
+                    noticeBtn.innerHTML = `<div class="c5-marquee-container"><div class="c5-marquee-content">${noticeMsg}</div></div>`;
+                    noticeBtn.style.cssText = `
+                        background: #fdf2f2 !important; color: #d32f2f !important;
+                        padding: 4px 10px !important; text-align: center !important;
+                        border-radius: 4px !important; cursor: pointer !important;
+                        font-size: 12px !important; font-weight: normal !important;
+                        margin: 0 0 10px 0 !important; width: 100% !important;
+                        box-sizing: border-box !important; border: 1px solid #f5c2c7 !important;
+                        box-shadow: 0 2px 5px rgba(0,0,0,0.1) !important;
+                        display: block !important; transition: all 0.2s; line-height: 18px !important;
+                    `;
+                    
+                    noticeBtn.onclick = (e) => {
+                        e.preventDefault(); e.stopPropagation();
+                        navigator.clipboard.writeText(cmd).then(() => {
+                            noticeBtn.innerHTML = "✅ 指令已复制";
+                            noticeBtn.style.background = "#4caf50";
+                            noticeBtn.style.color = "#fff";
+                            noticeBtn.style.borderColor = "#4caf50";
+                            setTimeout(() => {
+                                noticeBtn.innerHTML = `<div class="c5-marquee-container"><div class="c5-marquee-content">${noticeMsg}</div></div>`;
+                                noticeBtn.style.background = "#fdf2f2";
+                                noticeBtn.style.color = "#d32f2f";
+                                noticeBtn.style.borderColor = "#f5c2c7";
+                            }, 1500);
+                        }).catch(err => {
+                            noticeBtn.innerHTML = "❌ 复制失败";
+                            setTimeout(() => { noticeBtn.innerHTML = `<div class="c5-marquee-container"><div class="c5-marquee-content">${noticeMsg}</div></div>`; }, 1500);
+                        });
+                    };
+                }
             }
 
             // 插入节点
             const head = popup.querySelector('.pt15.fixed-head');
             if (head) {
                 head.appendChild(btn);
+                if (noticeBtn) head.appendChild(noticeBtn);
             } else {
+                if (noticeBtn) popup.prepend(noticeBtn);
                 popup.prepend(btn);
             }
         });
